@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>航油預測</title>
+</head>
+<body>
+    <h1>隔天({{ next_day }})價格預測(使用XGB Regressor)</h1>
+    <p style="color:red">Predicted Value (Next Day):<b> {{ xgb_pred }}</b></p>
+    <a href="/xgb_form">自訂 XGB 輸入</a>
+    <h1>隔天({{ next_day }})價格預測(使用Prophet)</h1>
+    <p style="color:red">Predicted Value (Next Day):<b> {{ prophet_fvalue }}</b></p>
+    <hr />
+
+    <h2>Latest Prophet Forecast (Offline Updated)</h2>
+    <div>
+        <p>Below is the last 7 days forecast data from <en>latest_forecast.csv</en>:</p>
+        {{ future_table_html|safe }}
+    </div>
+
+    <h2>Plot A - Full History + Future</h2>
+    {% if plot_full_url %}
+      <img src="{{ plot_full_url }}" alt="Plot Full" width="600">
+    {% else %}
+      <p>No plot_full.png found</p>
+    {% endif %}
+
+    <hr/>
+    <h2>Plot B - Recent 15d + Next 7d</h2>
+    {% if plot_recent_url %}
+      <img src="{{ plot_recent_url }}" alt="Plot Recent" width="600">
+    {% else %}
+      <p>No plot_recent_url.png found</p>
+    {% endif %}
+
+    <hr/>
+    <!-- 新增: Append Data 按鈕 -->
+    <form action="/append" method="POST">
+      <button type="submit" style="background-color:blue; color:white; padding:10px">
+        Append New Data
+      </button>
+    </form>
+    <!-- 新增按鈕, 導向 /train (POST) 重新執行 train_prophet.py -->
+    <form action="/train" method="POST">
+      <button type="submit" style="background-color:green; color:white; padding:10px">
+        重新訓練 Prophet
+      </button>
+    </form>
+</body>
+</html>

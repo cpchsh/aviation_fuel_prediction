@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>XGB 自訂輸入</title>
+</head>
+<body>
+    <h1>XGB Custom Input</h1>
+    <form action="/xgb_predict" method="POST">
+      <label>日本 (japan): </label>
+      <input type="text" name="japan" value="600"><br/><br/>
+
+      <label>南韓 (korea): </label>
+      <input type="text" name="korea" value="590"><br/><br/>
+
+      <label>香港 (hongkong): </label>
+      <input type="text" name="hongkong" value="580"><br/><br/>
+
+      <label>新加坡 (singapore): </label>
+      <input type="text" name="singapore" value="570"><br/><br/>
+
+      <label>上海 (shanghai): </label>
+      <input type="text" name="shanghai" value="585"><br/><br/>
+
+      <label>舟山 (zhoushan): </label>
+      <input type="text" name="zhoushan" value="580"><br/><br/>
+
+      <!-- 送出 -->
+      <button type="submit">Predict CPC by XGB</button>
+    </form>
+
+    <hr/>
+    <a href="/">Back to Home</a>
+</body>
+</html>

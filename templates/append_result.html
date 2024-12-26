@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Append Result</title>
+        <!-- 3秒後自動跳轉回/ -->
+        <meta http-equiv="refresh" content="{{ sec }};url={{ url_for('index' )}}">
+    </head>
+    <body>
+        <h1>{{ message }}</h1>
+        <p>This page will auto redirect in {{ sec }} seconds.</p>
+    </body>
+</html>

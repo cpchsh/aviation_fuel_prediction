@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>XGB Prediction Result</title>
+</head>
+<body>
+    <h1>XGB Model Prediction Result</h1>
+    <p>輸入值：</p>
+    <ul>
+      <li>日本 (japan): {{ j }}</li>
+      <li>南韓 (korea): {{ k }}</li>
+      <li>香港 (hongkong): {{ h }}</li>
+      <li>新加坡 (singapore): {{ s }}</li>
+      <li>上海 (shanghai): {{ sh }}</li>
+      <li>舟山 (zh): {{ zh }}</li>
+    </ul>
+
+    <p>以簡易規則 y_lag_1 = japan+5, y_lag_2=japan, y_lag_3=japan-5</p>
+    <p style="color:red">**預測 CPC** = <b>{{ result_val }}</b></p>
+    <hr/>
+    <a href="/">Back to Home</a>
+</body>
+</html>
