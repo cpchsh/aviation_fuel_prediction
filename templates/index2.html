@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航油預測</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <!-- Loading 動畫 -->
+    <div id="loading"><span class="spinner"></span>Loading...</div>
+    <h1>隔天({{ next_day }})價格預測(使用XGB Regressor)</h1>
+    <p style="color:red">Predicted Value (Next Day):<b> {{ xgb_pred }}</b></p>
+    <a href="/xgb_form">自訂 XGB 輸入</a>
+    <h1>隔天({{ next_day }})價格預測(使用Prophet)</h1>
+    <p style="color:red">Predicted Value (Next Day):<b> {{ prophet_fvalue }}</b></p>
+    <hr />
+
+    <h2>Latest Prophet Forecast (Offline Updated)</h2>
+    <div>
+        <p>Below is the last 7 days forecast data from <en>latest_forecast.csv</en>:</p>
+        {{ future_table_html|safe }}
+    </div>
+
+    <h2>Plot A - Full History + Future</h2>
+    {% if plot_full_url %}
+      <img src="{{ plot_full_url }}" alt="Plot Full" width="600">
+    {% else %}
+      <p>No plot_full.png found</p>
+    {% endif %}
+
+    <hr/>
+    <h2>Plot B - Recent 15d + Next 7d</h2>
+    {% if plot_recent_url %}
+      <img src="{{ plot_recent_url }}" alt="Plot Recent" width="600">
+    {% else %}
+      <p>No plot_recent_url.png found</p>
+    {% endif %}
+
+    <hr/>
+    <!-- 新增: Append Data 按鈕 -->
+    <button id="appendAndTrainBtn" style="background-color:blue; color:white; padding:10px">
+      Append and Train
+    </button>
+ 
+    <script>
+      $(document).ready(function (){
+        $('#appendAndTrainBtn').on('click', function() {
+          $('#loading').show(); //顯示 loading 動畫
+          $(this).prop('disabled', true); // 禁用按鈕
+          $.ajax({
+            url: '/append_and_train',
+            type: 'POST',
+            success: function (response) {
+              $('#loading').hide(); //隱藏 loading 動畫
+              $('#appendAndTrainBtn').prop('disabled', false); // 啟用按鈕
+              alert(response.message); // 顯示伺服器返回的提示訊息
+              location.reload(); // 刷新頁面以更新內容
+            },
+            error: function() {
+              $('#loading').hide();
+              $('#appendAndTrainBtn').prop('disabled', false); // 啟用按鈕
+              alert('An error occurred while processing');
+            }
+          });
+        });
+      });
+    </script>
+</body>
+</html>

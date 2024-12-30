@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 import joblib
 import pandas as pd
 import os
@@ -117,83 +117,62 @@ def index():
                            future_table_html=future_table_html,
                            plot_full_url=plot_full_url,
                            plot_recent_url=plot_recent_url)
-    
-#======================#
-#   4) 重新訓練Prophet  #
-#======================#
-@app.route("/train", methods=["POST"])
-def train_prophet():
+#================================#
+#   4) append + 重新訓練Prophet  #
+#================================#
+# 合併「append + train」
+@app.route("/append_and_train", methods=["POST"])
+def append_and_train():
     """
-    用 subprocess 執行 train_prophet.py
-    成功後 redirect 回首頁
+    1)讀取 collectedata/tempdata.csv，與資料集.csv 做比對
+      - 若有新日期，就append
+      - 否則不動
+    2)執行train_prophet.py
+    3)顯示提示頁 / 或直接 redirect -> index
     """
     import subprocess  # ← 用於在Python程式中執行外部指令，如 train_prophet.py
     import sys
-    # 執行外部指令: python train_prophet.py
-    subprocess.run([sys.executable, "train_prophet.py"], check=True)
-    # 執行完後回到首頁
-    return redirect(url_for('index'))
+    temp_path = "./collectedata/tempdata.csv"
+    data_path = "./資料集.csv"
 
-#==========================#
-#  /append -> append資料  #
-#==========================#
-@app.route("/append", methods=["POST"])
-def append_data():
-    """
-    1) 讀取 collectedata/tempdata.csv
-    2) 與 資料集.csv 做比對：
-       - 若 tempdata.csv 第一筆 ds > 資料集.csv最後一筆 ds => append
-       - 否則不動
-    3) 給一個提示頁(3秒)表示成功or無更新，然後回到 "/"
-    """
-    # 1) 讀檔
-    temp_path = "./collectedata/tempdata.csv" # path
     if not os.path.exists(temp_path):
-        return render_template("append_result.html",
-                               message="tempdata.csv not found",
-                               sec=3)
-    temp_df = pd.read_csv(temp_path, header=None)
-    # 假設temp_df結構: 2024/11/4, 597.0,595.0,596.0,581.0,593.0,590.0,585.0
-    # => columns=[0,1,2,3,4,5,6,7], 0=日期, 1=日本, 2=韓國, 3=香港, ...
-    temp_df.columns = ['日期','日本','南韓','香港','新加坡','上海','舟山','CPC']
-
-    # 2) 讀取原資料集
-    data_path = './資料集.csv'
+        return jsonify({"message": "Tempdata CSV not found!"}), 400
     if not os.path.exists(data_path):
-        return render_template("append_result.html",
-                               message="資料集.csv not found!",
-                               sec=3)
+        return jsonify({"message": "資料集 CSV not found!"}), 400
+    
+    temp_df = pd.read_csv(temp_path, header=None)
+    temp_df.columns = ['日期','日本','南韓','香港','新加坡','上海','舟山','CPC']
     data_df = pd.read_csv(data_path)
     data_df.columns = data_df.columns.str.strip()
 
-    # 轉datetime
     temp_df['日期'] = pd.to_datetime(temp_df['日期'])
     data_df['日期'] = pd.to_datetime(data_df['日期'])
     temp_df.sort_values('日期', inplace=True)
     data_df.sort_values('日期', inplace=True)
 
-    last_date = data_df['日期'].max() #資料集中最新日期
-    first_temp_date = temp_df.iloc[0]['日期'] # tempdata第一筆日期
+    last_date = data_df['日期'].max()
+    first_temp_date = temp_df.iloc[0]['日期']
 
     if first_temp_date > last_date:
-        # 代表有新的 => append
-        # 這裡就直接把temp_df整個加進去
-        appended_df = pd.concat([data_df, temp_df], ignore_index = True)
+        appended_df = pd.concat([data_df, temp_df], ignore_index=True)
         appended_df.sort_values('日期', inplace=True)
-        # 重新輸出
         appended_df.to_csv(data_path, index=False)
         msg = f"New data appended successfully! (First day={first_temp_date.date()})"
     else:
-        # 沒更新
         msg = f"No update. (tempdata first day={first_temp_date.date()} not > last data day={last_date.date()})"
     
-    # 顯示提示頁，3秒後回首頁
-    return render_template("append_result.html",
-                           message=msg,
-                           sec=3)
+    # 2) 執行 train_prophet.py
+    try:
+        subprocess.run([sys.executable, "train_prophet.py"], check=True)
+        msg += " - Train completed!"
+        return jsonify({"message": msg}), 200
+    except subprocess.CalledProcessError as e:
+        msg += f" - Train script failed: {e}"
+        return jsonify({"message": msg}), 500
+
 
 #==========================#
-#   6) 自訂 XGB 輸入 form   #
+#   5) 自訂 XGB 輸入 form   #
 #==========================#
 @app.route("/xgb_form", methods=["GET"])
 def xgb_input_form():

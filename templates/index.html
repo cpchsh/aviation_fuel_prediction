@@ -2,49 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>航油預測</title>
-</head>
-<body>
-    <h1>隔天({{ next_day }})價格預測(使用XGB Regressor)</h1>
-    <p style="color:red">Predicted Value (Next Day):<b> {{ xgb_pred }}</b></p>
-    <a href="/xgb_form">自訂 XGB 輸入</a>
-    <h1>隔天({{ next_day }})價格預測(使用Prophet)</h1>
-    <p style="color:red">Predicted Value (Next Day):<b> {{ prophet_fvalue }}</b></p>
-    <hr />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* 自定義表格樣式 */
+        .custom-table {
+          /* 若想保留間隔線，可以加上 table-bordered  */
+          /* 想要精簡一點，可移除或減少 border */
+          border: 1px solid #dee2e6; 
+          border-collapse: separate; 
+          border-spacing: 0.5rem; 
+        }
+        .custom-table thead th {
+          background-color: #f8f9fa; /* 表頭背景色 */
+          color: #333;               /* 表頭文字顏色 */
+          font-weight: 600;
+        }
+        .custom-table th, .custom-table td {
+          padding: 16px 20px;        /* 增加內邊距 */
+          vertical-align: middle;    /* 垂直居中 */
+          font-size: 15px;           /* 調整字體大小 */
+          border: 1px solid #dee2e6;
+        } */
 
-    <h2>Latest Prophet Forecast (Offline Updated)</h2>
-    <div>
-        <p>Below is the last 7 days forecast data from <en>latest_forecast.csv</en>:</p>
-        {{ future_table_html|safe }}
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+
+        th, td {
+          text-align: left;
+          padding: 8px;
+          border: 1px solid #ddd;
+        }
+
+        th {
+          background-color: #f2f2f2;
+        }
+        
+        /* 若想在表格之間加大間距，可以嘗試 margin 或 padding */
+        .table-container {
+          margin-bottom: 2rem;       /* 表格底部留空間 */
+        }
+
+        /* Loading 動畫 */
+        #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1055;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- 頁面標題 -->
+    <header class="bg-primary text-white text-center py-4">
+        <h1>航油價格預測</h1>
+    </header>
+
+    <!-- Loading 動畫 -->
+    <div id="loading">
+        <div class="d-flex justify-content-center align-items-center flex-column">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span class="mt-2">Processing... Please wait.</span>
+        </div>
     </div>
 
-    <h2>Plot A - Full History + Future</h2>
-    {% if plot_full_url %}
-      <img src="{{ plot_full_url }}" alt="Plot Full" width="600">
-    {% else %}
-      <p>No plot_full.png found</p>
-    {% endif %}
+    <!-- 主要內容 -->
+    <div class="container my-4">
+        <!-- XGB 預測結果 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title text-primary">隔天 ({{ next_day }}) 價格預測 (XGB Regressor)</h2>
+                <p class="card-text text-danger fs-5">預測值 (隔日): <b>{{ xgb_pred }}</b></p>
+                <a href="/xgb_form" class="btn btn-outline-primary">自訂 XGB 輸入</a>
+            </div>
+        </div>
 
-    <hr/>
-    <h2>Plot B - Recent 15d + Next 7d</h2>
-    {% if plot_recent_url %}
-      <img src="{{ plot_recent_url }}" alt="Plot Recent" width="600">
-    {% else %}
-      <p>No plot_recent_url.png found</p>
-    {% endif %}
+        <!-- Prophet 預測結果 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title text-primary">隔天 ({{ next_day }}) 價格預測 (Prophet)</h2>
+                <p class="card-text text-danger fs-5">預測值 (隔日): <b>{{ prophet_fvalue }}</b></p>
+            </div>
+        </div>
 
-    <hr/>
-    <!-- 新增: Append Data 按鈕 -->
-    <form action="/append" method="POST">
-      <button type="submit" style="background-color:blue; color:white; padding:10px">
-        Append New Data
-      </button>
-    </form>
-    <!-- 新增按鈕, 導向 /train (POST) 重新執行 train_prophet.py -->
-    <form action="/train" method="POST">
-      <button type="submit" style="background-color:green; color:white; padding:10px">
-        重新訓練 Prophet
-      </button>
-    </form>
+        <!-- Latest Forecast 表格 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title text-primary">未來Prophet預測值</h2>
+                <p>以下是由Prophet預測出的未來7日值  <br>yhat:預測值,<br>yhat_lower:預測信賴區間下邊界,<br>yhat_upper:預測信賴區間上邊界:</p>
+                <!-- 建議加個容器 class 方便管理整個區塊空間 -->
+                <div class="table-container table-responsive">
+                    <table class="table custom-table text-center">
+                      {{ future_table_html|safe }}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 圖表 -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <h3 class="text-primary">Prophet Plot A - 全歷史圖</h3>
+                {% if plot_full_url %}
+                  <img src="{{ plot_full_url }}" alt="Plot Full" class="img-fluid">
+                {% else %}
+                  <p>No plot_full.png found</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-4">
+                <h3 class="text-primary">Prophet Plot B - 最近 15日 + 未來 7日</h3>
+                {% if plot_recent_url %}
+                  <img src="{{ plot_recent_url }}" alt="Plot Recent" class="img-fluid">
+                {% else %}
+                  <p>No plot_recent_url.png found</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Append and Train 按鈕 -->
+        <div class="text-center">
+            <button id="appendAndTrainBtn" class="btn btn-primary btn-lg">更新和重訓資料</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#appendAndTrainBtn').on('click', function () {
+                $('#loading').show(); // 顯示 loading 動畫
+                $(this).prop('disabled', true); // 禁用按鈕
+                $.ajax({
+                    url: '/append_and_train',
+                    type: 'POST',
+                    success: function (response) {
+                        $('#loading').hide(); // 隱藏 loading 動畫
+                        $('#appendAndTrainBtn').prop('disabled', false); // 啟用按鈕
+                        alert(response.message); // 顯示伺服器返回的提示訊息
+                        location.reload(); // 刷新頁面以更新內容
+                    },
+                    error: function () {
+                        $('#loading').hide();
+                        $('#appendAndTrainBtn').prop('disabled', false); // 啟用按鈕
+                        alert('An error occurred while processing.');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
