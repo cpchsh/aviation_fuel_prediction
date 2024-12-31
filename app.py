@@ -13,7 +13,7 @@ app.secret_key = "anyrandomsecret"  # 若要使用flash或session需設
 #======================#
 # 假設你已在其他地方用 joblib.dump(xgb_model, "xgb_model.pkl")
 # 並把檔案放在專案根目錄
-xgb_model_path = "./xgb_model.pkl"
+xgb_model_path = "./xgb_model_new.pkl"
 xgb_model = joblib.load(xgb_model_path)
 
 
@@ -28,7 +28,7 @@ def predict_next_day_xgb(xgb_model):
      - xgb_model.predict([features]) -> y_pred
     """
     # 假設 features = [ .. ]，維度要跟訓練時一致
-    file_path = './資料集.csv'
+    file_path = './資料集_new.csv'
     data = pd.read_csv(file_path)
 
     # 去除列名空白
@@ -133,7 +133,7 @@ def append_and_train():
     import subprocess  # ← 用於在Python程式中執行外部指令，如 train_prophet.py
     import sys
     temp_path = "./collectedata/tempdata.csv"
-    data_path = "./資料集.csv"
+    data_path = "./資料集_new.csv"
 
     if not os.path.exists(temp_path):
         return jsonify({"message": "Tempdata CSV not found!"}), 400

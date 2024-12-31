@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 def main():
     # 1) 讀取原始資料
-    file_path = '資料集.csv'
+    file_path = '資料集_new.csv'
     data = pd.read_csv(file_path)
 
     # 必要的資料清洗、欄位改名
